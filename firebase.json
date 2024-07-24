@@ -1,0 +1,24 @@
+{
+  "hosting": {
+    "public": "build",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "environment": {
+      "REACT_APP_FIREBASE_API_KEY": "${firebase.apikey}",
+      "REACT_APP_FIREBASE_AUTH_DOMAIN": "${firebase.authdomain}",
+      "REACT_APP_FIREBASE_PROJECT_ID": "${firebase.projectid}",
+      "REACT_APP_FIREBASE_STORAGE_BUCKET": "${firebase.storagebucket}",
+      "REACT_APP_FIREBASE_MESSAGING_SENDER_ID": "${firebase.messagingsenderid}",
+      "REACT_APP_FIREBASE_APP_ID": "${firebase.appid}"
+    }
+  }
+}
