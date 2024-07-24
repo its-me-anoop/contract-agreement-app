@@ -3,7 +3,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import ReactMarkdown from 'react-markdown';
+import { renderMarkdown } from 'react-markdown';
 
 function ContractPage() {
     const [contract, setContract] = useState(null);
@@ -99,8 +99,8 @@ function ContractPage() {
                         <h1 className="text-3xl font-bold mb-4 text-gray-800">{contract.title}</h1>
                         <div className="mb-6 flex items-center">
                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                    contract.status === 'signed' ? 'bg-green-100 text-green-800' :
-                                        'bg-gray-100 text-gray-800'
+                                contract.status === 'signed' ? 'bg-green-100 text-green-800' :
+                                    'bg-gray-100 text-gray-800'
                                 }`}>
                                 {contract.status}
                             </span>
