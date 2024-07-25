@@ -4,12 +4,16 @@ import { db, auth } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import CryptoJS from 'crypto-js';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 function ContractPage() {
     const [contract, setContract] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [user, setUser] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedContent, setEditedContent] = useState('');
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -56,6 +60,39 @@ function ContractPage() {
 
         return () => unsubscribe();
     }, [fetchContract]);
+
+    const handleEdit = () => {
+        setIsEditing(true);
+        setEditedContent(contract.content);
+    };
+
+    const handleSaveEdit = async () => {
+        try {
+            const newVersion = (contract.version || 0) + 1;
+            const updatedContract = {
+                ...contract,
+                content: editedContent,
+                version: newVersion,
+                lastEditedAt: new Date(),
+                lastEditedBy: user.email
+            };
+
+            const encryptionKey = contract.createdBy + contract.receiverEmail;
+            const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(updatedContract), encryptionKey).toString();
+
+            await updateDoc(doc(db, 'contracts', id), {
+                encryptedData: encryptedData,
+                version: newVersion,
+                lastEditedAt: new Date(),
+                lastEditedBy: user.email
+            });
+
+            setIsEditing(false);
+            fetchContract(user);
+        } catch (error) {
+            setError("Error updating contract: " + error.message);
+        }
+    };
 
     const handleSign = async () => {
         if (!user || user.email !== contract.receiverEmail) {
@@ -105,6 +142,9 @@ function ContractPage() {
         </div>;
     }
 
+    const canEdit = contract.status === 'pending' && user.email === contract.senderEmail;
+    const canSign = contract.status === 'pending' && user.email === contract.receiverEmail;
+
     return (
         <div className="max-w-4xl mx-auto mt-8 p-4">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -117,9 +157,14 @@ function ContractPage() {
                             }`}>
                             Status: {contract.status}
                         </span>
-                        {contract.signedBy && (
+                        {contract.version && (
                             <span className="text-sm text-gray-600">
-                                Signed by: {contract.signedBy} on {contract.signedAt.toDate().toLocaleString()}
+                                Version: {contract.version}
+                            </span>
+                        )}
+                        {contract.lastEditedAt && (
+                            <span className="text-sm text-gray-600">
+                                Last edited: {new Date(contract.lastEditedAt.seconds * 1000).toLocaleString()} by {contract.lastEditedBy}
                             </span>
                         )}
                     </div>
@@ -137,12 +182,36 @@ function ContractPage() {
 
                     <div className="mb-6">
                         <h2 className="text-xl font-semibold mb-2 text-gray-700">Contract Details</h2>
-                        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: contract.content }} />
+                        {isEditing ? (
+                            <ReactQuill
+                                theme="snow"
+                                value={editedContent}
+                                onChange={setEditedContent}
+                            />
+                        ) : (
+                            <div className="prose max-w-none bg-gray-50 p-4 rounded-lg" dangerouslySetInnerHTML={{ __html: contract.content }} />
+                        )}
                     </div>
                 </div>
 
                 <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
-                    {contract.status === 'pending' && user.email === contract.receiverEmail && (
+                    {canEdit && !isEditing && (
+                        <button
+                            onClick={handleEdit}
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                        >
+                            Edit Contract
+                        </button>
+                    )}
+                    {isEditing && (
+                        <button
+                            onClick={handleSaveEdit}
+                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                        >
+                            Save Changes
+                        </button>
+                    )}
+                    {canSign && (
                         <button
                             onClick={handleSign}
                             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
@@ -153,7 +222,7 @@ function ContractPage() {
                     {user.email === contract.senderEmail && (
                         <button
                             onClick={handleCopyLink}
-                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                            className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
                         >
                             Copy Share Link
                         </button>
