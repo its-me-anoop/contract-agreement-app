@@ -7,8 +7,8 @@ import { FaFileContract, FaCheckCircle, FaClock, FaExclamationCircle, FaUser, Fa
 function Dashboard() {
     const [contracts, setContracts] = useState([]);
     const [stats, setStats] = useState({ total: 0, signed: 0, pending: 0, expired: 0 });
-    const [, setLoading] = useState(true);
-    const [, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -109,6 +109,14 @@ function Dashboard() {
                 return 'bg-gray-100 text-gray-800';
         }
     };
+
+    if (loading) {
+        return <div className="text-center mt-8">Loading...</div>;
+    }
+
+    if (error) {
+        return <div className="text-red-500 text-center mt-8">{error}</div>;
+    }
 
     return (
         <div className="max-w-6xl mx-auto mt-8 p-4">
