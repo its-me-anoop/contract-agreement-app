@@ -14,6 +14,7 @@ function ContractPage() {
     const [user, setUser] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState('');
+    const [agreeToTerms, setAgreeToTerms] = useState(false);
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -95,6 +96,11 @@ function ContractPage() {
     };
 
     const handleSign = async () => {
+        if (!agreeToTerms) {
+            setError("Please confirm that you have read and agree to the terms before signing.");
+            return;
+        }
+
         if (!user || user.email !== contract.receiverEmail) {
             setError("You are not authorized to sign this contract.");
             return;
@@ -117,6 +123,7 @@ function ContractPage() {
         navigator.clipboard.writeText(link);
         alert('Contract link copied to clipboard!');
     };
+
 
     if (!user && !loading) {
         return <Navigate to="/login" state={{ from: `/contract/${id}` }} />;
@@ -152,8 +159,8 @@ function ContractPage() {
                     <h1 className="text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
                     <div className="mb-6 flex items-center justify-between">
                         <span className={`px-3 py-1 text-sm font-semibold rounded-full ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                contract.status === 'signed' ? 'bg-green-100 text-green-800' :
-                                    'bg-gray-100 text-gray-800'
+                            contract.status === 'signed' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
                             }`}>
                             Status: {contract.status}
                         </span>
@@ -189,9 +196,27 @@ function ContractPage() {
                                 onChange={setEditedContent}
                             />
                         ) : (
-                            <div className="prose max-w-none bg-gray-50 p-4 rounded-lg" dangerouslySetInnerHTML={{ __html: contract.content }} />
+                            <div className="prose max-w-none bg-gray-50 p-4 rounded-lg">
+                                <div dangerouslySetInnerHTML={{ __html: contract.content }} />
+                            </div>
                         )}
                     </div>
+
+                    {canSign && (
+                        <div className="mb-4">
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={agreeToTerms}
+                                    onChange={(e) => setAgreeToTerms(e.target.checked)}
+                                    className="form-checkbox h-5 w-5 text-blue-600"
+                                />
+                                <span className="ml-2 text-gray-700">
+                                    I have read and agree to the terms of this contract
+                                </span>
+                            </label>
+                        </div>
+                    )}
                 </div>
 
                 <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
@@ -214,7 +239,8 @@ function ContractPage() {
                     {canSign && (
                         <button
                             onClick={handleSign}
-                            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                            className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 ${!agreeToTerms && 'opacity-50 cursor-not-allowed'}`}
+                            disabled={!agreeToTerms}
                         >
                             Sign Contract
                         </button>
