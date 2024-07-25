@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import CryptoJS from 'crypto-js';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
-import { Timestamp } from 'firebase/firestore';
 
 const formatDate = (date) => {
     if (date instanceof Timestamp) {
@@ -126,14 +125,39 @@ function ContractPage() {
         }
 
         try {
-            await updateDoc(doc(db, 'contracts', id), {
+            setLoading(true);  // Add loading state while signing
+            const contractRef = doc(db, 'contracts', id);
+
+            // Update the contract status
+            await updateDoc(contractRef, {
                 status: 'signed',
                 signedBy: user.uid,
-                signedAt: new Date()
+                signedAt: Timestamp.now()
             });
-            fetchContract(user);
+
+            // Fetch the updated contract
+            const updatedContractSnap = await getDoc(contractRef);
+            if (updatedContractSnap.exists()) {
+                const updatedContractData = updatedContractSnap.data();
+                const encryptionKey = updatedContractData.createdBy + updatedContractData.receiverEmail;
+                const decryptedData = decryptData(updatedContractData.encryptedData, encryptionKey);
+
+                setContract({
+                    id: updatedContractSnap.id,
+                    ...updatedContractData,
+                    ...decryptedData
+                });
+
+                setError(null);  // Clear any existing errors
+                alert("Contract signed successfully!");
+            } else {
+                throw new Error("Failed to fetch updated contract");
+            }
         } catch (error) {
+            console.error("Error signing contract:", error);
             setError("Error signing contract: " + error.message);
+        } finally {
+            setLoading(false);  // Reset loading state
         }
     };
 
@@ -222,19 +246,14 @@ function ContractPage() {
                     </div>
 
                     {canSign && (
-                        <div className="mb-4">
-                            <label className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    checked={agreeToTerms}
-                                    onChange={(e) => setAgreeToTerms(e.target.checked)}
-                                    className="form-checkbox h-5 w-5 text-blue-600"
-                                />
-                                <span className="ml-2 text-gray-700">
-                                    I have read and agree to the terms of this contract
-                                </span>
-                            </label>
-                        </div>
+                        <button
+                            onClick={handleSign}
+                            className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 ${!agreeToTerms || loading ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            disabled={!agreeToTerms || loading}
+                        >
+                            {loading ? 'Signing...' : 'Sign Contract'}
+                        </button>
                     )}
                 </div>
 
