@@ -8,6 +8,18 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
 
+const formatDate = (date) => {
+    if (date instanceof Date) {
+        return date.toLocaleString();
+    } else if (date && date.seconds) {
+        return new Date(date.seconds * 1000).toLocaleString();
+    } else if (date && date.toDate) {
+        return date.toDate().toLocaleString();
+    } else {
+        return 'Invalid Date';
+    }
+};
+
 function ContractPage() {
     const [contract, setContract] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -172,7 +184,7 @@ function ContractPage() {
                         )}
                         {contract.lastEditedAt && (
                             <span className="text-sm text-gray-600">
-                                Last edited: {new Date(contract.lastEditedAt.seconds * 1000).toLocaleString()} by {contract.lastEditedBy}
+                                Last edited: {formatDate(contract.lastEditedAt)} by {contract.lastEditedBy}
                             </span>
                         )}
                     </div>
