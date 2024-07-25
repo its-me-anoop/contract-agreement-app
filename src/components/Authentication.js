@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 function Authentication() {
@@ -8,20 +8,31 @@ function Authentication() {
     const [password, setPassword] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
     const [error, setError] = useState(null);
+    const [message, setMessage] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
+        setMessage(null);
+
         try {
             if (isSignUp) {
-                await createUserWithEmailAndPassword(auth, email, password);
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await sendEmailVerification(userCredential.user);
+                setMessage("Account created. Please check your email to verify your account.");
             } else {
-                await signInWithEmailAndPassword(auth, email, password);
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                if (!userCredential.user.emailVerified) {
+                    setError("Please verify your email before signing in.");
+                    await sendEmailVerification(userCredential.user);
+                    setMessage("A new verification email has been sent.");
+                    return;
+                }
+                const redirectTo = location.state?.from || '/dashboard';
+                navigate(redirectTo);
             }
-            const redirectTo = location.state?.from || '/dashboard';
-            navigate(redirectTo);
         } catch (error) {
             setError(error.message);
         }
@@ -31,6 +42,7 @@ function Authentication() {
         <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-xl">
             <h2 className="text-2xl font-bold mb-6 text-center">{isSignUp ? 'Create Account' : 'Login'}</h2>
             {error && <p className="text-red-500 mb-4">{error}</p>}
+            {message && <p className="text-green-500 mb-4">{message}</p>}
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                     <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email</label>
