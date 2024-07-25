@@ -24,30 +24,44 @@ function Dashboard() {
                 throw new Error("User not authenticated");
             }
 
-            console.log("Current user:", user.uid); // Debug log
-
-            const q = query(
+            const senderQuery = query(
                 collection(db, 'contracts'),
-                where('createdBy', '==', user.uid),
+                where('senderEmail', '==', user.email),
                 orderBy('createdAt', 'desc')
             );
 
-            console.log("Query constructed"); // Debug log
+            const receiverQuery = query(
+                collection(db, 'contracts'),
+                where('receiverEmail', '==', user.email),
+                orderBy('createdAt', 'desc')
+            );
 
-            const querySnapshot = await getDocs(q);
+            const [senderSnapshot, receiverSnapshot] = await Promise.all([
+                getDocs(senderQuery),
+                getDocs(receiverQuery)
+            ]);
 
-            console.log("Query executed, document count:", querySnapshot.size); // Debug log
+            const senderContracts = senderSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                role: 'sender'
+            }));
 
-            const contractList = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                console.log("Contract data:", data); // Debug log
-                return { id: doc.id, ...data };
-            });
+            const receiverContracts = receiverSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                role: 'receiver'
+            }));
 
-            setContracts(contractList);
+            const allContracts = [...senderContracts, ...receiverContracts];
+
+            // Sort all contracts by createdAt
+            allContracts.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+
+            setContracts(allContracts);
 
             // Calculate stats
-            const newStats = contractList.reduce((acc, contract) => {
+            const newStats = allContracts.reduce((acc, contract) => {
                 acc.total++;
                 acc[contract.status] = (acc[contract.status] || 0) + 1;
                 return acc;
