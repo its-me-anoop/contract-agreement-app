@@ -7,15 +7,17 @@ import CryptoJS from 'crypto-js';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
+import { Timestamp } from 'firebase/firestore';
 
 const formatDate = (date) => {
-    if (date instanceof Date) {
+    if (date instanceof Timestamp) {
+        return date.toDate().toLocaleString();
+    } else if (date instanceof Date) {
         return date.toLocaleString();
-    } else if (date && date.seconds) {
-        return new Date(date.seconds * 1000).toLocaleString();
-    } else if (date && date.toDate) {
+    } else if (date && typeof date.toDate === 'function') {
         return date.toDate().toLocaleString();
     } else {
+        console.log('Unexpected date format:', date);
         return 'Invalid Date';
     }
 };
@@ -50,7 +52,8 @@ function ContractPage() {
                 setContract({
                     id: docSnap.id,
                     ...contractData,
-                    ...decryptedData
+                    ...decryptedData,
+                    lastEditedAt: contractData.lastEditedAt // Ensure this Timestamp is preserved
                 });
             } else {
                 setError("No such contract!");
@@ -83,21 +86,24 @@ function ContractPage() {
     const handleSaveEdit = async () => {
         try {
             const newVersion = (contract.version || 0) + 1;
-            const updatedContract = {
-                ...contract,
+            const encryptionKey = contract.createdBy + contract.receiverEmail;
+
+            const updatedData = {
                 content: editedContent,
                 version: newVersion,
-                lastEditedAt: new Date(),
+                lastEditedAt: Timestamp.now(),
                 lastEditedBy: user.email
             };
 
-            const encryptionKey = contract.createdBy + contract.receiverEmail;
-            const encryptedData = CryptoJS.AES.encrypt(JSON.stringify(updatedContract), encryptionKey).toString();
+            const encryptedData = CryptoJS.AES.encrypt(
+                JSON.stringify(updatedData),
+                encryptionKey
+            ).toString();
 
             await updateDoc(doc(db, 'contracts', id), {
-                encryptedData: encryptedData,
+                encryptedData,
                 version: newVersion,
-                lastEditedAt: new Date(),
+                lastEditedAt: Timestamp.now(),
                 lastEditedBy: user.email
             });
 
