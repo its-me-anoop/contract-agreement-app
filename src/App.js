@@ -7,6 +7,8 @@ import Dashboard from './components/Dashboard';
 import ContractPage from './components/ContractPage';
 import CreateContract from './components/CreateContract';
 import Authentication from './components/Authentication';
+import LegalDoc from './components/LegalDoc';
+import Footer from './components/Footer';
 import 'react-quill/dist/quill.snow.css';
 import './index.css';  // or whatever your main CSS file is named
 
@@ -47,8 +49,10 @@ function App() {
               element={user ? <CreateContract /> : <Navigate to="/login" />}
             />
             <Route path="/login" element={<Authentication />} />
+            <Route path="/legal/:docType" element={<LegalDoc />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </Router>
   );
