@@ -6,6 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import CryptoJS from 'crypto-js';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import DOMPurify from 'dompurify';
 
 function ContractPage() {
     const [contract, setContract] = useState(null);
@@ -197,7 +198,7 @@ function ContractPage() {
                             />
                         ) : (
                             <div className="prose max-w-none bg-gray-50 p-4 rounded-lg">
-                                <div dangerouslySetInnerHTML={{ __html: contract.content }} />
+                                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contract.content) }} />
                             </div>
                         )}
                     </div>
