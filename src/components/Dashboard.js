@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { FaFileContract, FaCheckCircle, FaClock, FaExclamationCircle, FaUser, FaCalendar } from 'react-icons/fa';
+import { FaFileContract, FaCheckCircle, FaClock, FaExclamationCircle } from 'react-icons/fa';
 
 function Dashboard() {
     const [contracts, setContracts] = useState([]);
@@ -79,34 +79,13 @@ function Dashboard() {
     const getStatusIcon = (status) => {
         switch (status) {
             case 'signed':
-                return <FaCheckCircle className="text-green-500" title="Signed" />;
+                return <FaCheckCircle className="text-green-500" />;
             case 'pending':
-                return <FaClock className="text-yellow-500" title="Pending" />;
+                return <FaClock className="text-yellow-500" />;
             case 'expired':
-                return <FaExclamationCircle className="text-red-500" title="Expired" />;
+                return <FaExclamationCircle className="text-red-500" />;
             default:
-                return <FaFileContract className="text-gray-500" title="Contract" />;
-        }
-    };
-
-    const formatDate = (date) => {
-        return new Date(date.seconds * 1000).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
-    const getStatusClass = (status) => {
-        switch (status) {
-            case 'signed':
-                return 'bg-green-100 text-green-800';
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'expired':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
+                return <FaFileContract className="text-gray-500" />;
         }
     };
 
@@ -156,41 +135,21 @@ function Dashboard() {
                 {contracts.length > 0 ? (
                     <ul className="divide-y divide-gray-200">
                         {contracts.map((contract) => (
-                            <li key={contract.id} className="p-4 hover:bg-gray-50 transition duration-150 ease-in-out">
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                                    <div className="flex items-start mb-2 sm:mb-0">
-                                        <div className="mr-3">
-                                            {getStatusIcon(contract.status)}
-                                        </div>
-                                        <div>
+                            <li key={contract.id} className="p-4 hover:bg-gray-50">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        {getStatusIcon(contract.status)}
+                                        <div className="ml-3">
                                             <h3 className="text-lg font-semibold">{contract.title}</h3>
-                                            <div className="text-sm text-gray-500 mt-1">
-                                                <p className="flex items-center">
-                                                    <FaUser className="mr-2" />
-                                                    {contract.role === 'sender' ? 'To:' : 'From:'} {contract.role === 'sender' ? contract.receiverEmail : contract.senderEmail}
-                                                </p>
-                                                <p className="flex items-center mt-1">
-                                                    <FaCalendar className="mr-2" />
-                                                    Created: {formatDate(contract.createdAt)}
-                                                </p>
-                                                <p className="flex items-center mt-1">
-                                                    <FaCalendar className="mr-2" />
-                                                    Expires: {formatDate(contract.expiryDate)}
-                                                </p>
-                                            </div>
+                                            <p className="text-sm text-gray-500">Client: {contract.clientEmail}</p>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center mt-2 sm:mt-0">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(contract.status)} mr-2 mb-2 sm:mb-0`}>
-                                            {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
-                                        </span>
-                                        <Link
-                                            to={`/contract/${contract.id}`}
-                                            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out"
-                                        >
-                                            View Contract
-                                        </Link>
-                                    </div>
+                                    <Link
+                                        to={`/contract/${contract.id}`}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                                    >
+                                        View Contract
+                                    </Link>
                                 </div>
                             </li>
                         ))}
