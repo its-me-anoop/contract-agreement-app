@@ -52,7 +52,7 @@ function ContractPage() {
                     id: docSnap.id,
                     ...contractData,
                     ...decryptedData,
-                    lastEditedAt: contractData.lastEditedAt // Ensure this Timestamp is preserved
+                    lastEditedAt: contractData.lastEditedAt
                 });
             } else {
                 setError("No such contract!");
@@ -125,17 +125,15 @@ function ContractPage() {
         }
 
         try {
-            setLoading(true);  // Add loading state while signing
+            setLoading(true);
             const contractRef = doc(db, 'contracts', id);
 
-            // Update the contract status
             await updateDoc(contractRef, {
                 status: 'signed',
                 signedBy: user.uid,
                 signedAt: Timestamp.now()
             });
 
-            // Fetch the updated contract
             const updatedContractSnap = await getDoc(contractRef);
             if (updatedContractSnap.exists()) {
                 const updatedContractData = updatedContractSnap.data();
@@ -148,7 +146,7 @@ function ContractPage() {
                     ...decryptedData
                 });
 
-                setError(null);  // Clear any existing errors
+                setError(null);
                 alert("Contract signed successfully!");
             } else {
                 throw new Error("Failed to fetch updated contract");
@@ -157,7 +155,7 @@ function ContractPage() {
             console.error("Error signing contract:", error);
             setError("Error signing contract: " + error.message);
         } finally {
-            setLoading(false);  // Reset loading state
+            setLoading(false);
         }
     };
 
@@ -166,7 +164,6 @@ function ContractPage() {
         navigator.clipboard.writeText(link);
         alert('Contract link copied to clipboard!');
     };
-
 
     if (!user && !loading) {
         return <Navigate to="/login" state={{ from: `/contract/${id}` }} />;
@@ -196,30 +193,32 @@ function ContractPage() {
     const canSign = contract.status === 'pending' && user.email === contract.receiverEmail;
 
     return (
-        <div className="max-w-4xl mx-auto mt-8 p-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="p-6">
-                    <h1 className="text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
-                    <div className="mb-6 flex items-center justify-between">
-                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                <div className="p-4 sm:p-6">
+                    <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
+                    <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                        <span className={`px-3 py-1 text-sm font-semibold rounded-full mb-2 sm:mb-0 ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                             contract.status === 'signed' ? 'bg-green-100 text-green-800' :
                                 'bg-gray-100 text-gray-800'
                             }`}>
                             Status: {contract.status}
                         </span>
-                        {contract.version && (
-                            <span className="text-sm text-gray-600">
-                                Version: {contract.version}
-                            </span>
-                        )}
-                        {contract.lastEditedAt && (
-                            <span className="text-sm text-gray-600">
-                                Last edited: {formatDate(contract.lastEditedAt)} by {contract.lastEditedBy}
-                            </span>
-                        )}
+                        <div className="flex flex-col sm:flex-row sm:items-center">
+                            {contract.version && (
+                                <span className="text-sm text-gray-600 mr-4 mb-2 sm:mb-0">
+                                    Version: {contract.version}
+                                </span>
+                            )}
+                            {contract.lastEditedAt && (
+                                <span className="text-sm text-gray-600">
+                                    Last edited: {formatDate(contract.lastEditedAt)} by {contract.lastEditedBy}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-6">
                         <div>
                             <h2 className="text-xl font-semibold mb-2 text-gray-700">Sender</h2>
                             <PartyDetails party={contract.sender} />
@@ -246,57 +245,66 @@ function ContractPage() {
                     </div>
 
                     {canSign && (
-                        <button
-                            onClick={handleSign}
-                            className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 ${!agreeToTerms || loading ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                            disabled={!agreeToTerms || loading}
-                        >
-                            {loading ? 'Signing...' : 'Sign Contract'}
-                        </button>
+                        <div className="mb-4">
+                            <label className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={agreeToTerms}
+                                    onChange={(e) => setAgreeToTerms(e.target.checked)}
+                                    className="form-checkbox h-5 w-5 text-blue-600"
+                                />
+                                <span className="ml-2 text-gray-700">
+                                    I have read and agree to the terms of this contract
+                                </span>
+                            </label>
+                        </div>
                     )}
                 </div>
 
-                <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
-                    {canEdit && !isEditing && (
+                <div className="bg-gray-50 px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center">
+                    <div className="flex flex-wrap gap-2 mb-2 sm:mb-0">
+                        {canEdit && !isEditing && (
+                            <button
+                                onClick={handleEdit}
+                                className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                            >
+                                Edit Contract
+                            </button>
+                        )}
+                        {isEditing && (
+                            <button
+                                onClick={handleSaveEdit}
+                                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                            >
+                                Save Changes
+                            </button>
+                        )}
+                        {canSign && (
+                            <button
+                                onClick={handleSign}
+                                className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 ${!agreeToTerms || loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={!agreeToTerms || loading}
+                            >
+                                {loading ? 'Signing...' : 'Sign Contract'}
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {user.email === contract.senderEmail && (
+                            <button
+                                onClick={handleCopyLink}
+                                className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                            >
+                                Copy Share Link
+                            </button>
+                        )}
                         <button
-                            onClick={handleEdit}
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                            onClick={() => navigate(-1)}
+                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
                         >
-                            Edit Contract
+                            Back
                         </button>
-                    )}
-                    {isEditing && (
-                        <button
-                            onClick={handleSaveEdit}
-                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
-                        >
-                            Save Changes
-                        </button>
-                    )}
-                    {canSign && (
-                        <button
-                            onClick={handleSign}
-                            className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300 ${!agreeToTerms && 'opacity-50 cursor-not-allowed'}`}
-                            disabled={!agreeToTerms}
-                        >
-                            Sign Contract
-                        </button>
-                    )}
-                    {user.email === contract.senderEmail && (
-                        <button
-                            onClick={handleCopyLink}
-                            className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
-                        >
-                            Copy Share Link
-                        </button>
-                    )}
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
-                    >
-                        Back
-                    </button>
+                    </div>
                 </div>
             </div>
         </div>
