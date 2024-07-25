@@ -24,27 +24,39 @@ function Dashboard() {
                 throw new Error("User not authenticated");
             }
 
+            console.log("Current user:", user.uid); // Debug log
+
             const q = query(
                 collection(db, 'contracts'),
                 where('createdBy', '==', user.uid),
                 orderBy('createdAt', 'desc')
             );
 
+            console.log("Query constructed"); // Debug log
+
             const querySnapshot = await getDocs(q);
-            const contractList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            console.log("Query executed, document count:", querySnapshot.size); // Debug log
+
+            const contractList = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                console.log("Contract data:", data); // Debug log
+                return { id: doc.id, ...data };
+            });
+
             setContracts(contractList);
 
             // Calculate stats
             const newStats = contractList.reduce((acc, contract) => {
                 acc.total++;
-                acc[contract.status]++;
+                acc[contract.status] = (acc[contract.status] || 0) + 1;
                 return acc;
             }, { total: 0, signed: 0, pending: 0, expired: 0 });
 
             setStats(newStats);
         } catch (error) {
             console.error('Error fetching contracts:', error);
-            setError('Failed to load contracts. Please try again.');
+            setError('Failed to load contracts. Please try again. Error: ' + error.message);
         } finally {
             setLoading(false);
         }
