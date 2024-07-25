@@ -75,6 +75,12 @@ function ContractPage() {
         }
     };
 
+    const handleCopyLink = () => {
+        const link = `${window.location.origin}/contract/${id}`;
+        navigator.clipboard.writeText(link);
+        alert('Contract link copied to clipboard!');
+    };
+
     if (!user && !loading) {
         return <Navigate to="/login" state={{ from: `/contract/${id}` }} />;
     }
@@ -99,74 +105,77 @@ function ContractPage() {
         </div>;
     }
 
-    const canSign = contract && contract.status === 'pending' && user && user.email === contract.receiverEmail;
-
     return (
         <div className="max-w-4xl mx-auto mt-8 p-4">
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                 <div className="p-6">
-                    <h1 className="text-3xl font-bold mb-4 text-gray-800">{contract.title}</h1>
-                    <div className="mb-6 flex items-center">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            contract.status === 'signed' ? 'bg-green-100 text-green-800' :
-                                'bg-gray-100 text-gray-800'
+                    <h1 className="text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
+                    <div className="mb-6 flex items-center justify-between">
+                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                contract.status === 'signed' ? 'bg-green-100 text-green-800' :
+                                    'bg-gray-100 text-gray-800'
                             }`}>
-                            {contract.status}
+                            Status: {contract.status}
                         </span>
                         {contract.signedBy && (
-                            <span className="ml-2 text-sm text-gray-600">
-                                Signed by: {contract.signedBy}
-                            </span>
-                        )}
-                        {contract.signedAt && (
-                            <span className="ml-2 text-sm text-gray-600">
-                                on {contract.signedAt.toDate().toLocaleString()}
+                            <span className="text-sm text-gray-600">
+                                Signed by: {contract.signedBy} on {contract.signedAt.toDate().toLocaleString()}
                             </span>
                         )}
                     </div>
-                    <div className="mb-6">
-                        <h2 className="text-xl font-semibold mb-2">Sender Details</h2>
-                        <PartyDetails party={contract.sender} />
+
+                    <div className="grid grid-cols-2 gap-8 mb-6">
+                        <div>
+                            <h2 className="text-xl font-semibold mb-2 text-gray-700">Sender</h2>
+                            <PartyDetails party={contract.sender} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-semibold mb-2 text-gray-700">Receiver</h2>
+                            <PartyDetails party={contract.receiver} />
+                        </div>
                     </div>
+
                     <div className="mb-6">
-                        <h2 className="text-xl font-semibold mb-2">Receiver Details</h2>
-                        <PartyDetails party={contract.receiver} />
+                        <h2 className="text-xl font-semibold mb-2 text-gray-700">Contract Details</h2>
+                        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: contract.content }} />
                     </div>
-                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: contract.content }} />
                 </div>
-                <div className="bg-gray-50 px-6 py-4">
-                    {canSign ? (
+
+                <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
+                    {contract.status === 'pending' && user.email === contract.receiverEmail && (
                         <button
                             onClick={handleSign}
                             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
                         >
                             Sign Contract
                         </button>
-                    ) : (
-                        <p className="text-gray-600 italic">
-                            {contract.status === 'signed'
-                                ? 'This contract has been signed.'
-                                : 'You are not authorized to sign this contract.'}
-                        </p>
                     )}
+                    {user.email === contract.senderEmail && (
+                        <button
+                            onClick={handleCopyLink}
+                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                        >
+                            Copy Share Link
+                        </button>
+                    )}
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                    >
+                        Back
+                    </button>
                 </div>
             </div>
-            <button
-                onClick={() => navigate(-1)}
-                className="mt-4 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
-            >
-                Back
-            </button>
         </div>
     );
 }
 
 function PartyDetails({ party }) {
     return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="bg-gray-50 p-4 rounded-lg">
             {Object.entries(party).map(([key, value]) => (
-                <div key={key}>
-                    <span className="font-semibold">{key.charAt(0).toUpperCase() + key.slice(1)}:</span> {value}
+                <div key={key} className="mb-1">
+                    <span className="font-semibold text-gray-700">{key.charAt(0).toUpperCase() + key.slice(1)}:</span> {value}
                 </div>
             ))}
         </div>
