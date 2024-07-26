@@ -28,6 +28,7 @@ function ContractPage() {
     const [user, setUser] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState('');
+    const [editedExpiryDate, setEditedExpiryDate] = useState('');
     const [agreeToTerms, setAgreeToTerms] = useState(false);
     const { id } = useParams();
     const navigate = useNavigate();
@@ -54,6 +55,7 @@ function ContractPage() {
                     ...decryptedData,
                     lastEditedAt: contractData.lastEditedAt
                 });
+                setEditedExpiryDate(contractData.expiryDate.toDate().toISOString().split('T')[0]);
             } else {
                 setError("No such contract!");
             }
@@ -89,6 +91,7 @@ function ContractPage() {
 
             const updatedData = {
                 content: editedContent,
+                expiryDate: editedExpiryDate,
                 version: newVersion,
                 lastEditedAt: Timestamp.now(),
                 lastEditedBy: user.email
@@ -101,6 +104,7 @@ function ContractPage() {
 
             await updateDoc(doc(db, 'contracts', id), {
                 encryptedData,
+                expiryDate: new Date(editedExpiryDate),
                 version: newVersion,
                 lastEditedAt: Timestamp.now(),
                 lastEditedBy: user.email
@@ -199,8 +203,8 @@ function ContractPage() {
                     <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
                     <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
                         <span className={`px-3 py-1 text-sm font-semibold rounded-full mb-2 sm:mb-0 ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            contract.status === 'signed' ? 'bg-green-100 text-green-800' :
-                                'bg-gray-100 text-gray-800'
+                                contract.status === 'signed' ? 'bg-green-100 text-green-800' :
+                                    'bg-gray-100 text-gray-800'
                             }`}>
                             Status: {contract.status}
                         </span>
@@ -216,6 +220,20 @@ function ContractPage() {
                                 </span>
                             )}
                         </div>
+                    </div>
+
+                    <div className="mb-4">
+                        <h2 className="text-xl font-semibold mb-2 text-gray-700">Expiry Date</h2>
+                        {isEditing ? (
+                            <input
+                                type="date"
+                                value={editedExpiryDate}
+                                onChange={(e) => setEditedExpiryDate(e.target.value)}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        ) : (
+                            <p>{formatDate(contract.expiryDate)}</p>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-6">
