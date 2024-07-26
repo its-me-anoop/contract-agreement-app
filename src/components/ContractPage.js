@@ -131,6 +131,8 @@ function ContractPage() {
     };
 
     const handleSign = async () => {
+        console.log("User:", user);
+        console.log("Contract:", contract);
         if (!agreeToTerms) {
             setError("Please confirm that you have read and agree to the terms before signing.");
             return;
@@ -144,6 +146,7 @@ function ContractPage() {
         try {
             setLoading(true);
             const contractRef = doc(db, 'contracts', id);
+            console.log("Updating contract with ID:", id);
 
             await updateDoc(contractRef, {
                 status: 'signed',
@@ -151,6 +154,7 @@ function ContractPage() {
                 signedAt: Timestamp.now()
             });
 
+            console.log("Contract signed successfully");
             fetchContract(user);
         } catch (error) {
             console.error("Error signing contract:", error);
@@ -159,6 +163,7 @@ function ContractPage() {
             setLoading(false);
         }
     };
+
 
     const handleCopyLink = () => {
         const link = `${window.location.origin}/contract/${id}`;
