@@ -167,13 +167,17 @@ function ContractPage() {
         alert('Contract link copied to clipboard!');
     };
 
-    const handlePrint = () => {
-        window.print();
-    };
-
     const handleDownload = () => {
         const element = document.getElementById('contract-content');
-        html2pdf().from(element).save(`contract_${id}.pdf`);
+        const opt = {
+            margin: 1,
+            filename: `contract_${id}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+        html2pdf().set(opt).from(element).save();
     };
 
     if (!user && !loading) {
@@ -207,7 +211,7 @@ function ContractPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                 <div className="p-4 sm:p-6">
-                    <div id="contract-content">
+                    <div id="contract-content" className="p-4 border-2 border-gray-200 rounded-lg">
                         <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
                         <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
                             <span className={`px-3 py-1 text-sm font-semibold rounded-full mb-2 sm:mb-0 ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -325,12 +329,6 @@ function ContractPage() {
                                 Copy Share Link
                             </button>
                         )}
-                        <button
-                            onClick={handlePrint}
-                            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
-                        >
-                            Print Contract
-                        </button>
                         <button
                             onClick={handleDownload}
                             className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
