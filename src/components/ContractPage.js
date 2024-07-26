@@ -207,66 +207,68 @@ function ContractPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="bg-white shadow-lg rounded-lg overflow-hidden">
                 <div className="p-4 sm:p-6">
-                    <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
-                    <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                        <span className={`px-3 py-1 text-sm font-semibold rounded-full mb-2 sm:mb-0 ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            contract.status === 'signed' ? 'bg-green-100 text-green-800' :
-                                'bg-gray-100 text-gray-800'
-                            }`}>
-                            Status: {contract.status}
-                        </span>
-                        <div className="flex flex-col sm:flex-row sm:items-center">
-                            {contract.version && (
-                                <span className="text-sm text-gray-600 mr-4 mb-2 sm:mb-0">
-                                    Version: {contract.version}
-                                </span>
-                            )}
-                            {contract.lastEditedAt && (
-                                <span className="text-sm text-gray-600">
-                                    Last edited: {formatDate(contract.lastEditedAt)} by {contract.lastEditedBy}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="mb-4">
-                        <h2 className="text-xl font-semibold mb-2 text-gray-700">Expiry Date</h2>
-                        {isEditing ? (
-                            <input
-                                type="date"
-                                value={editedExpiryDate}
-                                onChange={(e) => setEditedExpiryDate(e.target.value)}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            />
-                        ) : (
-                            <p>{contract.expiryDate ? formatDate(contract.expiryDate) : 'No Expiry Date'}</p>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-6">
-                        <div>
-                            <h2 className="text-xl font-semibold mb-2 text-gray-700">Sender</h2>
-                            <PartyDetails party={contract.sender} />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-semibold mb-2 text-gray-700">Receiver</h2>
-                            <PartyDetails party={contract.receiver} />
-                        </div>
-                    </div>
-
-                    <div className="mb-6" id="contract-content">
-                        <h2 className="text-xl font-semibold mb-2 text-gray-700">Contract Details</h2>
-                        {isEditing ? (
-                            <ReactQuill
-                                theme="snow"
-                                value={editedContent}
-                                onChange={setEditedContent}
-                            />
-                        ) : (
-                            <div className="prose max-w-none bg-gray-50 p-4 rounded-lg">
-                                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contract.content) }} />
+                    <div id="contract-content">
+                        <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
+                        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                            <span className={`px-3 py-1 text-sm font-semibold rounded-full mb-2 sm:mb-0 ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                contract.status === 'signed' ? 'bg-green-100 text-green-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}>
+                                Status: {contract.status}
+                            </span>
+                            <div className="flex flex-col sm:flex-row sm:items-center">
+                                {contract.version && (
+                                    <span className="text-sm text-gray-600 mr-4 mb-2 sm:mb-0">
+                                        Version: {contract.version}
+                                    </span>
+                                )}
+                                {contract.lastEditedAt && (
+                                    <span className="text-sm text-gray-600">
+                                        Last edited: {formatDate(contract.lastEditedAt)} by {contract.lastEditedBy}
+                                    </span>
+                                )}
                             </div>
-                        )}
+                        </div>
+
+                        <div className="mb-4">
+                            <h2 className="text-xl font-semibold mb-2 text-gray-700">Expiry Date</h2>
+                            {isEditing ? (
+                                <input
+                                    type="date"
+                                    value={editedExpiryDate}
+                                    onChange={(e) => setEditedExpiryDate(e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+                            ) : (
+                                <p>{contract.expiryDate ? formatDate(contract.expiryDate) : 'No Expiry Date'}</p>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 mb-6">
+                            <div>
+                                <h2 className="text-xl font-semibold mb-2 text-gray-700">Sender</h2>
+                                <PartyDetails party={contract.sender} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-semibold mb-2 text-gray-700">Receiver</h2>
+                                <PartyDetails party={contract.receiver} />
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
+                            <h2 className="text-xl font-semibold mb-2 text-gray-700">Contract Details</h2>
+                            {isEditing ? (
+                                <ReactQuill
+                                    theme="snow"
+                                    value={editedContent}
+                                    onChange={setEditedContent}
+                                />
+                            ) : (
+                                <div className="prose max-w-none bg-gray-50 p-4 rounded-lg">
+                                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contract.content) }} />
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {canSign && (
