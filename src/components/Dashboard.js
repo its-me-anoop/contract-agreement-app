@@ -69,8 +69,13 @@ function Dashboard() {
             // Check for expired contracts
             const now = new Date();
             allContracts.forEach(contract => {
-                if (contract.expiryDate.toDate() < now && contract.status !== 'signed') {
-                    contract.status = 'expired';
+                if (contract.expiryDate && contract.expiryDate.toDate) {
+                    if (contract.expiryDate.toDate() < now && contract.status !== 'signed') {
+                        contract.status = 'expired';
+                    }
+                } else {
+                    console.warn(`Contract ${contract.id} has invalid expiryDate:`, contract.expiryDate);
+                    contract.status = 'invalid';
                 }
             });
 
@@ -81,7 +86,7 @@ function Dashboard() {
                 acc.total++;
                 acc[contract.status] = (acc[contract.status] || 0) + 1;
                 return acc;
-            }, { total: 0, signed: 0, pending: 0, expired: 0 });
+            }, { total: 0, signed: 0, pending: 0, expired: 0, invalid: 0 });
 
             setStats(newStats);
         } catch (error) {
@@ -91,6 +96,18 @@ function Dashboard() {
             setLoading(false);
         }
     };
+
+    const formatDate = (date) => {
+        if (!date || !date.seconds) {
+            return 'Invalid Date';
+        }
+        return new Date(date.seconds * 1000).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
 
     const getStatusIcon = (status) => {
         switch (status) {
@@ -103,14 +120,6 @@ function Dashboard() {
             default:
                 return <FaFileContract className="text-gray-500" title="Contract" />;
         }
-    };
-
-    const formatDate = (date) => {
-        return new Date(date.seconds * 1000).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
     };
 
     const getStatusClass = (status) => {
