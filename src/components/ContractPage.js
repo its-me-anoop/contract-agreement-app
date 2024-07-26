@@ -7,6 +7,7 @@ import CryptoJS from 'crypto-js';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
+import html2pdf from 'html2pdf.js';
 
 const formatDate = (date) => {
     if (date instanceof Timestamp) {
@@ -55,7 +56,7 @@ function ContractPage() {
                     expiryDate = expiryDate.toDate();
                 } else if (!(expiryDate instanceof Date)) {
                     console.warn('Unexpected expiryDate format:', expiryDate);
-                    expiryDate = new Date(); // Fallback to current date
+                    expiryDate = null; // Set to null if expiry date is not present or invalid
                 }
 
                 setContract({
@@ -65,7 +66,7 @@ function ContractPage() {
                     expiryDate: expiryDate,
                     lastEditedAt: contractData.lastEditedAt || null
                 });
-                setEditedExpiryDate(expiryDate.toISOString().split('T')[0]);
+                setEditedExpiryDate(expiryDate ? expiryDate.toISOString().split('T')[0] : '');
             } else {
                 throw new Error("No such contract!");
             }
@@ -80,18 +81,15 @@ function ContractPage() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             if (currentUser) {
-                console.log("Current User:", currentUser);
                 setUser(currentUser);
                 fetchContract(currentUser);
             } else {
-                console.log("No user authenticated");
                 setLoading(false);
             }
         });
 
         return () => unsubscribe();
     }, [fetchContract]);
-
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -134,11 +132,6 @@ function ContractPage() {
     };
 
     const handleSign = async () => {
-        console.log("handleSign called");
-        console.log("User:", user);
-        console.log("Contract:", contract);
-        console.log("Agree to Terms:", agreeToTerms);
-
         if (!agreeToTerms) {
             setError("Please confirm that you have read and agree to the terms before signing.");
             return;
@@ -152,7 +145,6 @@ function ContractPage() {
         try {
             setLoading(true);
             const contractRef = doc(db, 'contracts', id);
-            console.log("Updating contract with ID:", id);
 
             await updateDoc(contractRef, {
                 status: 'signed',
@@ -160,7 +152,6 @@ function ContractPage() {
                 signedAt: Timestamp.now()
             });
 
-            console.log("Contract signed successfully");
             fetchContract(user);
         } catch (error) {
             console.error("Error signing contract:", error);
@@ -170,11 +161,19 @@ function ContractPage() {
         }
     };
 
-
     const handleCopyLink = () => {
         const link = `${window.location.origin}/contract/${id}`;
         navigator.clipboard.writeText(link);
         alert('Contract link copied to clipboard!');
+    };
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleDownload = () => {
+        const element = document.getElementById('contract-content');
+        html2pdf().from(element).save(`contract_${id}.pdf`);
     };
 
     if (!user && !loading) {
@@ -240,7 +239,7 @@ function ContractPage() {
                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                         ) : (
-                            <p>{formatDate(contract.expiryDate)}</p>
+                            <p>{contract.expiryDate ? formatDate(contract.expiryDate) : 'No Expiry Date'}</p>
                         )}
                     </div>
 
@@ -255,7 +254,7 @@ function ContractPage() {
                         </div>
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-6" id="contract-content">
                         <h2 className="text-xl font-semibold mb-2 text-gray-700">Contract Details</h2>
                         {isEditing ? (
                             <ReactQuill
@@ -324,6 +323,18 @@ function ContractPage() {
                                 Copy Share Link
                             </button>
                         )}
+                        <button
+                            onClick={handlePrint}
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                        >
+                            Print Contract
+                        </button>
+                        <button
+                            onClick={handleDownload}
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
+                        >
+                            Download Contract
+                        </button>
                         <button
                             onClick={() => navigate(-1)}
                             className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-300"
