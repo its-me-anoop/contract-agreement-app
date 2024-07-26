@@ -79,16 +79,19 @@ function ContractPage() {
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
             if (currentUser) {
+                console.log("Current User:", currentUser);
+                setUser(currentUser);
                 fetchContract(currentUser);
             } else {
+                console.log("No user authenticated");
                 setLoading(false);
             }
         });
 
         return () => unsubscribe();
     }, [fetchContract]);
+
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -131,8 +134,11 @@ function ContractPage() {
     };
 
     const handleSign = async () => {
+        console.log("handleSign called");
         console.log("User:", user);
         console.log("Contract:", contract);
+        console.log("Agree to Terms:", agreeToTerms);
+
         if (!agreeToTerms) {
             setError("Please confirm that you have read and agree to the terms before signing.");
             return;
