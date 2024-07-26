@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import CryptoJS from 'crypto-js';
@@ -27,7 +27,7 @@ function CreateContract() {
     const [contract, setContract] = useState({
         title: '',
         content: '',
-        expiryDate: '', // Add this line
+        expiryDate: '',
         sender: {
             fullName: '',
             designation: '',
@@ -85,6 +85,10 @@ function CreateContract() {
 
         try {
             const user = auth.currentUser;
+            if (!user) {
+                throw new Error('You must be logged in to create a contract');
+            }
+
             const encryptionKey = user.uid + contract.receiver.email;
 
             const encryptedContract = {
@@ -93,19 +97,19 @@ function CreateContract() {
                     content: contract.content,
                     sender: contract.sender,
                     receiver: contract.receiver,
-                    expiryDate: contract.expiryDate
                 }, encryptionKey),
                 createdBy: user.uid,
-                createdAt: new Date(),
+                createdAt: Timestamp.now(),
                 status: 'pending',
                 senderEmail: user.email,
                 receiverEmail: contract.receiver.email,
-                expiryDate: new Date(contract.expiryDate) // Add this line
+                expiryDate: Timestamp.fromDate(new Date(contract.expiryDate))
             };
 
             const docRef = await addDoc(collection(db, 'contracts'), encryptedContract);
             navigate(`/contract/${docRef.id}`);
         } catch (error) {
+            console.error('Error creating contract:', error);
             setError('Error creating contract: ' + error.message);
         }
     };

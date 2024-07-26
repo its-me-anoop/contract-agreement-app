@@ -11,12 +11,12 @@ import DOMPurify from 'dompurify';
 const formatDate = (date) => {
     if (date instanceof Timestamp) {
         return date.toDate().toLocaleString();
-    } else if (date instanceof Date) {
-        return date.toLocaleString();
     } else if (date && typeof date.toDate === 'function') {
         return date.toDate().toLocaleString();
+    } else if (date instanceof Date) {
+        return date.toLocaleString();
     } else {
-        console.log('Unexpected date format:', date);
+        console.warn('Unexpected date format:', date);
         return 'Invalid Date';
     }
 };
@@ -49,17 +49,28 @@ function ContractPage() {
                 }
                 const encryptionKey = contractData.createdBy + contractData.receiverEmail;
                 const decryptedData = decryptData(contractData.encryptedData, encryptionKey);
+
+                let expiryDate = contractData.expiryDate;
+                if (expiryDate instanceof Timestamp) {
+                    expiryDate = expiryDate.toDate();
+                } else if (!(expiryDate instanceof Date)) {
+                    console.warn('Unexpected expiryDate format:', expiryDate);
+                    expiryDate = new Date(); // Fallback to current date
+                }
+
                 setContract({
                     id: docSnap.id,
                     ...contractData,
                     ...decryptedData,
-                    lastEditedAt: contractData.lastEditedAt
+                    expiryDate: expiryDate,
+                    lastEditedAt: contractData.lastEditedAt || null
                 });
-                setEditedExpiryDate(contractData.expiryDate.toDate().toISOString().split('T')[0]);
+                setEditedExpiryDate(expiryDate.toISOString().split('T')[0]);
             } else {
-                setError("No such contract!");
+                throw new Error("No such contract!");
             }
         } catch (error) {
+            console.error("Error fetching contract:", error);
             setError("Error fetching contract: " + error.message);
         } finally {
             setLoading(false);
@@ -91,20 +102,21 @@ function ContractPage() {
 
             const updatedData = {
                 content: editedContent,
-                expiryDate: editedExpiryDate,
+                expiryDate: new Date(editedExpiryDate),
                 version: newVersion,
-                lastEditedAt: Timestamp.now(),
-                lastEditedBy: user.email
             };
 
             const encryptedData = CryptoJS.AES.encrypt(
-                JSON.stringify(updatedData),
+                JSON.stringify({
+                    ...contract,
+                    ...updatedData
+                }),
                 encryptionKey
             ).toString();
 
             await updateDoc(doc(db, 'contracts', id), {
                 encryptedData,
-                expiryDate: new Date(editedExpiryDate),
+                expiryDate: Timestamp.fromDate(new Date(editedExpiryDate)),
                 version: newVersion,
                 lastEditedAt: Timestamp.now(),
                 lastEditedBy: user.email
@@ -113,6 +125,7 @@ function ContractPage() {
             setIsEditing(false);
             fetchContract(user);
         } catch (error) {
+            console.error("Error updating contract:", error);
             setError("Error updating contract: " + error.message);
         }
     };
@@ -138,23 +151,7 @@ function ContractPage() {
                 signedAt: Timestamp.now()
             });
 
-            const updatedContractSnap = await getDoc(contractRef);
-            if (updatedContractSnap.exists()) {
-                const updatedContractData = updatedContractSnap.data();
-                const encryptionKey = updatedContractData.createdBy + updatedContractData.receiverEmail;
-                const decryptedData = decryptData(updatedContractData.encryptedData, encryptionKey);
-
-                setContract({
-                    id: updatedContractSnap.id,
-                    ...updatedContractData,
-                    ...decryptedData
-                });
-
-                setError(null);
-                alert("Contract signed successfully!");
-            } else {
-                throw new Error("Failed to fetch updated contract");
-            }
+            fetchContract(user);
         } catch (error) {
             console.error("Error signing contract:", error);
             setError("Error signing contract: " + error.message);
@@ -203,8 +200,8 @@ function ContractPage() {
                     <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-800 border-b pb-2">{contract.title}</h1>
                     <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
                         <span className={`px-3 py-1 text-sm font-semibold rounded-full mb-2 sm:mb-0 ${contract.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                contract.status === 'signed' ? 'bg-green-100 text-green-800' :
-                                    'bg-gray-100 text-gray-800'
+                            contract.status === 'signed' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
                             }`}>
                             Status: {contract.status}
                         </span>
