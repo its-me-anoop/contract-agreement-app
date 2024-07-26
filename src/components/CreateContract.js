@@ -27,6 +27,7 @@ function CreateContract() {
     const [contract, setContract] = useState({
         title: '',
         content: '',
+        expiryDate: '', // Add this line
         sender: {
             fullName: '',
             designation: '',
@@ -49,13 +50,20 @@ function CreateContract() {
 
     const handleChange = (e, party) => {
         const { name, value } = e.target;
-        setContract(prev => ({
-            ...prev,
-            [party]: {
-                ...prev[party],
+        if (party) {
+            setContract(prev => ({
+                ...prev,
+                [party]: {
+                    ...prev[party],
+                    [name]: value
+                }
+            }));
+        } else {
+            setContract(prev => ({
+                ...prev,
                 [name]: value
-            }
-        }));
+            }));
+        }
     };
 
     const handleContentChange = (content) => {
@@ -70,27 +78,29 @@ function CreateContract() {
         e.preventDefault();
         setError(null);
 
-        if (!contract.title || !contract.content || !contract.sender.email || !contract.receiver.email) {
+        if (!contract.title || !contract.content || !contract.sender.email || !contract.receiver.email || !contract.expiryDate) {
             setError('Please fill in all required fields');
             return;
         }
 
         try {
             const user = auth.currentUser;
-            const encryptionKey = user.uid + contract.receiver.email; // Using a combination of sender UID and receiver email as the encryption key
+            const encryptionKey = user.uid + contract.receiver.email;
 
             const encryptedContract = {
-                title: contract.title, // Keep title unencrypted for easier querying
+                title: contract.title,
                 encryptedData: encryptData({
                     content: contract.content,
                     sender: contract.sender,
-                    receiver: contract.receiver
+                    receiver: contract.receiver,
+                    expiryDate: contract.expiryDate
                 }, encryptionKey),
                 createdBy: user.uid,
                 createdAt: new Date(),
                 status: 'pending',
                 senderEmail: user.email,
-                receiverEmail: contract.receiver.email
+                receiverEmail: contract.receiver.email,
+                expiryDate: new Date(contract.expiryDate) // Add this line
             };
 
             const docRef = await addDoc(collection(db, 'contracts'), encryptedContract);
@@ -99,8 +109,6 @@ function CreateContract() {
             setError('Error creating contract: ' + error.message);
         }
     };
-
-    // ... (keep the existing ReactQuill configuration)
 
     return (
         <div className="max-w-4xl mx-auto mt-8 p-4">
@@ -114,7 +122,20 @@ function CreateContract() {
                         id="title"
                         name="title"
                         value={contract.title}
-                        onChange={(e) => setContract({ ...contract, title: e.target.value })}
+                        onChange={(e) => handleChange(e)}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700">Expiry Date</label>
+                    <input
+                        type="date"
+                        id="expiryDate"
+                        name="expiryDate"
+                        value={contract.expiryDate}
+                        onChange={(e) => handleChange(e)}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                         required
                     />

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { FaFileContract, FaCheckCircle, FaClock, FaExclamationCircle, FaUser, FaEnvelope, FaCalendar } from 'react-icons/fa';
+import { FaFileContract, FaCheckCircle, FaClock, FaExclamationCircle, FaUser, FaCalendar } from 'react-icons/fa';
 
 function Dashboard() {
     const [contracts, setContracts] = useState([]);
